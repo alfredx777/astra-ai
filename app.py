@@ -9,7 +9,7 @@ CORS(app)  # Allows your React frontend to talk to this server
 
 # ─── API KEYS ───────────────────────────────────────────────────────────────
 # Replace these with your actual keys
-GEMINI_API_KEY     = "AIzaSyD9nPZwXWVVeS4uuidkA_QeID6yNSop_Tw"
+GEMINI_API_KEY     = ""
 WEATHER_API_KEY    = "YOUR_OPENWEATHERMAP_API_KEY"   # openweathermap.org
 NEWS_API_KEY       = "YOUR_NEWSAPI_KEY"              # newsapi.org
 DEFAULT_CITY       = "Accra"  # Change to your city
