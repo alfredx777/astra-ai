@@ -12,10 +12,10 @@ CORS(app)
 
 # ─── API KEYS ───────────────────────────────────────────────────────────────
 # Replace these with your actual keys
-GEMINI_API_KEY     = "YOUR_GEMINI_API_KEY"
-WEATHER_API_KEY    = "YOUR_OPENWEATHERMAP_API_KEY"   # openweathermap.org
-NEWS_API_KEY       = "YOUR_NEWSAPI_KEY"              # newsapi.org
-DEFAULT_CITY       = "Accra"  # Change to your city
+GEMINI_API_KEY     = os.getenv ("GEMINI_API_KEY")
+WEATHER_API_KEY    = os.getenv ("WEATHER_API_KEY")
+NEWS_API_KEY       = os.getenv ("NEWS_API_KEY")
+DEFAULT_CITY       = os.getenv ("DEFAULT_CITY", "Accra")
 
 # ─── GEMINI SETUP ────────────────────────────────────────────────────────────
 genai.configure(api_key=GEMINI_API_KEY)
