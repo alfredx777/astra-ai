@@ -3,21 +3,23 @@ from flask_cors import CORS
 import google.generativeai as genai
 import requests
 import os
+from dotenv import load_dotenv
+
+load_dotenv(".env.local")
 
 app = Flask(__name__)
-CORS(app)  # Allows your React frontend to talk to this server
+CORS(app)
 
-# ─── API KEYS ───────────────────────────────────────────────────────────────
-# Replace these with your actual keys
-GEMINI_API_KEY     = "AIzaSyD9nPZwXWVVeS4uuidkA_QeID6yNSop_Tw"
-WEATHER_API_KEY    = "YOUR_OPENWEATHERMAP_API_KEY"   # openweathermap.org
-NEWS_API_KEY       = "YOUR_NEWSAPI_KEY"              # newsapi.org
-DEFAULT_CITY       = "Accra"  # Change to your city
+# ─── API KEYS (loaded from .env.local) ──────────────────────────────────────
+GEMINI_API_KEY  = os.getenv("GEMINI_API_KEY")
+WEATHER_API_KEY = os.getenv("WEATHER_API_KEY")
+NEWS_API_KEY    = os.getenv("NEWS_API_KEY")
+DEFAULT_CITY    = os.getenv("DEFAULT_CITY", "Accra")
 
-# ─── GEMINI SETUP ───────────────────────────────────────────────────────────
+# ─── GEMINI SETUP ────────────────────────────────────────────────────────────
 genai.configure(api_key=GEMINI_API_KEY)
 model = genai.GenerativeModel(
-    model_name="gemini-1.5-flash",
+    model_name="gemini-2.0-flash",
     system_instruction=(
         "You are ASTRA — Adaptive Speech & Thought Response Assistant. "
         "You were built by Alfred Acheampong, a CS student from Ghana and IT support technician at Liranz. "
@@ -26,21 +28,17 @@ model = genai.GenerativeModel(
     )
 )
 
-
 # ─── /api/chat ───────────────────────────────────────────────────────────────
-# Accepts: { message: string, history: [{role, text}] }
-# Returns: { reply: string }
 @app.route("/api/chat", methods=["POST"])
 def chat():
     data = request.get_json()
     user_message = data.get("message", "").strip()
-    history = data.get("history", [])  # session memory passed from frontend
+    history = data.get("history", [])
 
     if not user_message:
         return jsonify({"error": "No message provided"}), 400
 
     try:
-        # Build conversation history for Gemini
         gemini_history = []
         for item in history:
             role = "user" if item["role"] == "user" else "model"
@@ -53,10 +51,7 @@ def chat():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
 # ─── /api/weather ────────────────────────────────────────────────────────────
-# Accepts: { city: string } (optional, defaults to DEFAULT_CITY)
-# Returns: { reply: string }
 @app.route("/api/weather", methods=["POST"])
 def weather():
     data = request.get_json()
@@ -67,13 +62,13 @@ def weather():
         res = requests.get(url).json()
 
         if res.get("cod") != 200:
-            return jsonify({"reply": f"Could not retrieve weather for {city}. Check your city name or API key."})
+            return jsonify({"reply": f"Could not retrieve weather for {city}."})
 
-        desc    = res["weather"][0]["description"].capitalize()
-        temp    = res["main"]["temp"]
-        feels   = res["main"]["feels_like"]
-        humidity= res["main"]["humidity"]
-        wind    = res["wind"]["speed"]
+        desc     = res["weather"][0]["description"].capitalize()
+        temp     = res["main"]["temp"]
+        feels    = res["main"]["feels_like"]
+        humidity = res["main"]["humidity"]
+        wind     = res["wind"]["speed"]
 
         reply = (
             f"Weather in {city}:\n"
@@ -85,10 +80,7 @@ def weather():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
 # ─── /api/news ───────────────────────────────────────────────────────────────
-# Accepts: {} or { country: string }
-# Returns: { reply: string }
 @app.route("/api/news", methods=["POST"])
 def news():
     data = request.get_json()
@@ -111,10 +103,7 @@ def news():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
 # ─── /api/wiki ───────────────────────────────────────────────────────────────
-# Accepts: { query: string }
-# Returns: { reply: string }
 @app.route("/api/wiki", methods=["POST"])
 def wiki():
     data = request.get_json()
@@ -128,11 +117,10 @@ def wiki():
         res = requests.get(url, headers={"User-Agent": "ASTRA-Assistant/1.0"}).json()
 
         if res.get("type") == "disambiguation" or "extract" not in res:
-            return jsonify({"reply": f"No clear Wikipedia result for '{query}'. Try a more specific term."})
+            return jsonify({"reply": f"No clear Wikipedia result for '{query}'."})
 
         title   = res.get("title", query)
         extract = res.get("extract", "No summary available.")
-        # Trim to a reasonable length
         if len(extract) > 600:
             extract = extract[:600].rsplit(" ", 1)[0] + "…"
 
@@ -140,7 +128,6 @@ def wiki():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 # ─── RUN ─────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":

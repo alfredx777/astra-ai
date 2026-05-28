@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import AstraOrb from "./AstraOrb";
 
 const STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&family=Exo+2:wght@100;200;300;400&display=swap');
@@ -388,16 +389,7 @@ export default function Astra() {
         </div>
 
         <div className="voice-section">
-          <div className={`orb-wrap ${orbState}`} onClick={toggleListen} role="button" aria-label="Toggle voice input">
-            <div className="orb-ring3" /><div className="orb-ring2" /><div className="orb-ring1" />
-            <div className="orb-core">
-              <span className="orb-sym">{orbState === "listening" ? "◎" : "◉"}</span>
-            </div>
-          </div>
-          <div className={`waveform${waveActive ? " active" : ""}`}>
-            {[...Array(8)].map((_, i) => <div key={i} className="wbar" />)}
-          </div>
-          <div className={`astra-status-line${statusActive ? " active" : ""}`}>{statusText}</div>
+          <AstraOrb state={orbState} onToggle={toggleListen} />
         </div>
 
         <div className="input-row">
