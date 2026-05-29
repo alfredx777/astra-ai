@@ -3,6 +3,8 @@ from flask_cors import CORS
 import google.generativeai as genai
 import requests
 import os
+import time
+from collections import defaultdict
 from dotenv import load_dotenv
 
 load_dotenv(".env.local")
@@ -10,7 +12,7 @@ load_dotenv(".env.local")
 app = Flask(__name__)
 CORS(app)
 
-# ─── API KEYS (loaded from .env.local) ──────────────────────────────────────
+# ─── API KEYS ────────────────────────────────────────────────────────────────
 GEMINI_API_KEY  = os.getenv("GEMINI_API_KEY")
 WEATHER_API_KEY = os.getenv("WEATHER_API_KEY")
 NEWS_API_KEY    = os.getenv("NEWS_API_KEY")
@@ -28,15 +30,30 @@ model = genai.GenerativeModel(
     )
 )
 
+# ─── RATE LIMITER ────────────────────────────────────────────────────────────
+request_log = defaultdict(list)
+RATE_LIMIT  = 8   # max requests per IP
+RATE_WINDOW = 60  # per 60 seconds
+
+def is_rate_limited(ip):
+    now = time.time()
+    request_log[ip] = [t for t in request_log[ip] if now - t < RATE_WINDOW]
+    if len(request_log[ip]) >= RATE_LIMIT:
+        return True
+    request_log[ip].append(now)
+    return False
+
 # ─── /api/ping ───────────────────────────────────────────────────────────────
 @app.route("/api/ping", methods=["GET"])
 def ping():
     return jsonify({"status": "awake"})
 
-
 # ─── /api/chat ───────────────────────────────────────────────────────────────
 @app.route("/api/chat", methods=["POST"])
 def chat():
+    if is_rate_limited(request.remote_addr):
+        return jsonify({"reply": "Easy there — ASTRA is cooling down. You have hit the rate limit. Please wait a moment and try again."}), 429
+
     data = request.get_json()
     user_message = data.get("message", "").strip()
     history = data.get("history", [])
@@ -55,7 +72,10 @@ def chat():
         return jsonify({"reply": response.text})
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        err = str(e)
+        if "429" in err or "quota" in err.lower():
+            return jsonify({"reply": "ASTRA's Gemini quota is temporarily exhausted. Generate a fresh API key at aistudio.google.com and update it in your Render environment variables."}), 429
+        return jsonify({"error": err}), 500
 
 # ─── /api/weather ────────────────────────────────────────────────────────────
 @app.route("/api/weather", methods=["POST"])
