@@ -10,17 +10,16 @@ load_dotenv(".env.local")
 app = Flask(__name__)
 CORS(app)
 
-# ─── API KEYS ───────────────────────────────────────────────────────────────
-# Replace these with your actual keys
-GEMINI_API_KEY     = os.getenv ("GEMINI_API_KEY")
-WEATHER_API_KEY    = os.getenv ("WEATHER_API_KEY")
-NEWS_API_KEY       = os.getenv ("NEWS_API_KEY")
-DEFAULT_CITY       = os.getenv ("DEFAULT_CITY", "Accra")
+# ─── API KEYS (loaded from .env.local) ──────────────────────────────────────
+GEMINI_API_KEY  = os.getenv("GEMINI_API_KEY")
+WEATHER_API_KEY = os.getenv("WEATHER_API_KEY")
+NEWS_API_KEY    = os.getenv("NEWS_API_KEY")
+DEFAULT_CITY    = os.getenv("DEFAULT_CITY", "Accra")
 
 # ─── GEMINI SETUP ────────────────────────────────────────────────────────────
 genai.configure(api_key=GEMINI_API_KEY)
 model = genai.GenerativeModel(
-    model_name="gemini-2.5-flash",
+    model_name="gemini-2.0-flash",
     system_instruction=(
         "You are ASTRA — Adaptive Speech & Thought Response Assistant. "
         "You were built by Alfred Acheampong, a CS student from Ghana and IT support technician at Liranz. "
@@ -28,6 +27,12 @@ model = genai.GenerativeModel(
         "Keep responses clear and useful. Never be overly verbose."
     )
 )
+
+# ─── /api/ping ───────────────────────────────────────────────────────────────
+@app.route("/api/ping", methods=["GET"])
+def ping():
+    return jsonify({"status": "awake"})
+
 
 # ─── /api/chat ───────────────────────────────────────────────────────────────
 @app.route("/api/chat", methods=["POST"])

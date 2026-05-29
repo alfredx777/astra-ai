@@ -1,6 +1,4 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import AstraOrb from "./AstraOrb";
-
 
 const STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&family=Exo+2:wght@100;200;300;400&display=swap');
@@ -441,6 +439,9 @@ export default function Astra() {
 
   useEffect(() => {
     const s = document.createElement("style"); s.textContent = STYLES; document.head.appendChild(s);
+    // Wake up Render backend on load (avoids cold start delay on first query)
+    const BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
+    fetch(`${BASE}/api/ping`).catch(() => {});
     return () => document.head.removeChild(s);
   }, []);
 
@@ -484,7 +485,8 @@ export default function Astra() {
       else if (lq.includes("news") || lq.includes("headlines")) { endpoint = "/api/news"; body = { country: "us" }; }
       else if (lq.includes("wikipedia") || lq.includes("who is") || lq.includes("what is")) { endpoint = "/api/wiki"; body = { query: query.replace(/wikipedia|search|wiki|who is|what is/gi,"").trim() }; }
 
-      const res   = await fetch(`http://localhost:5000${endpoint}`, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(body) });
+      const BASE  = import.meta.env.VITE_API_URL || "http://localhost:5000";
+      const res   = await fetch(`${BASE}${endpoint}`, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(body) });
       const data  = await res.json();
       const reply = data.reply || data.error || "No response.";
       history.current.push({ role:"user", text: query }, { role:"astra", text: reply });
